@@ -1,20 +1,19 @@
 from datetime import datetime
+from docx import Document
+import openpyxl
+import json
 
 def process_dados():
     alunos = []
     try:
-        with open('alunos.txt', 'r') as arquivo:
-            for linha in arquivo:
-                nome, matricula, birth, notas, faltas = linha.strip().split(';')
-                alunos.append({'nome' : nome, 'matricula' : matricula, 'data_nascimento' : birth, 'notas' : notas, 'faltas' : faltas})
+        with open('alunos.json', 'r', encoding='utf-8') as arquivo:
+            return json.load(arquivo)
     except FileNotFoundError:
-        pass
-    return alunos
+        return []
 
 def save_dados(alunos):
-    with open('alunos.txt', 'w') as arquivo:
-        for aluno in alunos:
-            arquivo.write(f"{aluno['nome']};{aluno['matricula']};{aluno['data_nascimento']};{aluno['notas']};{aluno['faltas']}\n")
+    with open('alunos.json', 'w', encoding='utf-8') as arquivo:
+        json.dump(alunos, arquivo, indent=4, ensure_ascii=False)
 
 def add_alun(alunos):
     nome = input('Digite o nome do(a) aluno(a): ')
@@ -31,6 +30,8 @@ def add_alun(alunos):
     for i in range(qtd):
         nota = float(input(f'Digite a {i+1}° nota: '))
         notas.append(nota)
+    media = sum(notas) / qtd
+    notas.append(media)
 
     while True:
         try:
@@ -39,7 +40,7 @@ def add_alun(alunos):
         except ValueError:
             print('Valor inválido, tente novamente.')
 
-    alunos.append({'nome': nome, 'matricula': matricula, 'data_nascimento': birth_format, 'notas': notas, 'faltas': faltas})
+    alunos.append({'nome': nome, 'matricula': matricula, 'data_nascimento': birth_format, 'notas': notas, 'media': media, 'faltas': faltas})
     save_dados(alunos)
     print('\nAluno(a) adicionado ao sistema.')
 
@@ -48,7 +49,7 @@ def list_al(alunos):
         print('Sem alunos registrados no sistema.')
     else:
         for aluno in alunos:
-            print(f'Nome: {aluno["nome"]}\nMatrícula: {aluno["matricula"]}\nData de nascimento: {aluno["data_nascimento"]}\nNotas: {aluno["notas"]}\nFaltas: {aluno["faltas"]}')
+            print(f'Nome: {aluno["nome"]}\nMatrícula: {aluno["matricula"]}\nData de nascimento: {aluno["data_nascimento"]}\nNotas: {aluno["notas"]}\nMédia: {aluno["media"]}\nFaltas: {aluno["faltas"]}')
 
 def find_al(alunos):
     while True:
@@ -59,10 +60,19 @@ def find_al(alunos):
             print('Valor não válido, tente novamente.')
     for aluno in alunos:
         if filtro == aluno['matricula']:
-            print(f'Aluno(a) encontrado:\nNome: {aluno["nome"]}\nMatrícula: {aluno["matricula"]}\nData de nascimento: {aluno["data_nascimento"]}\nNotas: {aluno["notas"]}\nFaltas: {aluno["faltas"]}')
+            print(f'Aluno(a) encontrado:\nNome: {aluno["nome"]}\nMatrícula: {aluno["matricula"]}\nData de nascimento: {aluno["data_nascimento"]}\nNotas: {aluno["notas"]}\nMédia: {aluno["media"]}\nFaltas: {aluno["faltas"]}')
             return aluno
     print('\nAluno não encontrado...')
     return None
+
+def relatorio_individual(alunos):
+    aluno = find_al(alunos)
+    if aluno:
+        try:
+            with open('relatorio-de-aluno', 'r') as arquivo:
+                print()
+        except FileNotFoundError:
+            pass
 
 def modificar(alunos):
     aluno = find_al(alunos)
@@ -91,6 +101,7 @@ def modificar(alunos):
         elif opc == 4:
             try:
                 qtd = int(input('Quantas notas deseja alterar: '))
+                aluno['notas'] = []
                 for i in range(qtd):
                     print(f"As notas atuais são: {aluno['notas']}")
                     new_nota = float(input(f'Digite a {i+1}° nova nota: '))
@@ -139,7 +150,7 @@ def menu():
     alunos = process_dados()
     while True:
         print(f'{"=" * 50}')
-        print('\nSISTEMA DE GESTÃO DE ALUNOS')
+        print(f'{"SISTEMA DE GESTÃO DE ALUNOS".center(50)}')
         print(f'{"=" * 50}')
         print('\n1 - Adicionar um novo aluno\n2 - Listar alunos já registrados\n3 - Buscar aluno\n4 - Editar dados de um aluno já cadastrado\n5 - Remover um aluno do sistema\n6 - Organizar lista de alunos\n0 - Sair do sistema')
         decisao = int(input('- '))
