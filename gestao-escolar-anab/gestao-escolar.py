@@ -9,29 +9,55 @@ def process_dados():
         with open('alunos.json', 'r', encoding='utf-8') as arquivo:
             return json.load(arquivo)
     except FileNotFoundError:
+        print("Arquivo 'alunos.json' não encontrado, criando novo arquivo...")
+        return []
+    except json.JSONDecodeError:
+        print("Erro ao decodificar o arquivo JSON. Verifique o formato do arquivo.")
         return []
 
 def save_dados(alunos):
-    with open('alunos.json', 'w', encoding='utf-8') as arquivo:
-        json.dump(alunos, arquivo, indent=4, ensure_ascii=False)
+    try:
+        with open('alunos.json', 'w', encoding='utf-8') as arquivo:
+            json.dump(alunos, arquivo, indent=4, ensure_ascii=False)
+    except Exception as e:
+        print(f"Ocorreu um erro ao salvar os dados: {e}")
 
 def add_alun(alunos):
     nome = input('Digite o nome do(a) aluno(a): ')
-    matricula = int(input('Digite o número de matrícula do(a) aluno(a): '))
-    birth = input('Digite a data de nascimento do(a) aluno(a) (no formato DD/MM/AAAA): ')
-    try:
-        data = datetime.strptime(birth, '%d/%m/%Y')
-        birth_format = data.strftime('%d-%m-%Y')
-    except ValueError:
-        print('Formato de data inválido... Por favor, tente novamente da forma indicada.')
-        return
+    while True:
+        try:
+            matricula = int(input('Digite o número de matrícula do(a) aluno(a): '))
+            break
+        except ValueError:
+            print('Valor inválido, tente novamente.')
+
+    while True:
+        birth = input('Digite a data de nascimento do(a) aluno(a) (no formato DD/MM/AAAA): ')
+        try:
+            data = datetime.strptime(birth, '%d/%m/%Y')
+            birth_format = data.strftime('%d-%m-%Y')
+            break
+        except ValueError:
+            print('Formato de data inválido... Por favor, tente novamente da forma indicada.')
+
     notas = []
-    
-    qtd = int(input('Quantas notas deseja adicionar ao perfil do(a) aluno(a): '))
+    while True:
+        try:
+            qtd = int(input('Quantas notas deseja adicionar ao perfil do(a) aluno(a): '))
+            break
+        except ValueError:
+            print('Valor inválido, tente novamente.')
+
     for i in range(qtd):
-        nota = float(input(f'Digite a {i+1}° nota: '))
-        notas.append(nota)
-    media = sum(notas) / len(notas)
+        while True:
+            try:
+                nota = float(input(f'Digite a {i+1}° nota: '))
+                notas.append(nota)
+                break
+            except ValueError:
+                print('Valor inválido, tente novamente.')
+
+    media = sum(notas) / len(notas) if notas else 0
 
     while True:
         try:
@@ -44,10 +70,12 @@ def add_alun(alunos):
     save_dados(alunos)
     print('\nAluno(a) adicionado ao sistema.\n')
 
-def calcular_status(media, faltas):
-    if media >= 7 and faltas <= 5:
+def calcular_status(media, faltas, total_aulas=200):
+    limite_faltas = total_aulas * 0.25
+
+    if media >= 7 and faltas <= limite_faltas:
         return "Aprovado"
-    elif media >= 5 and faltas <= 5:
+    elif media >= 5 and faltas <= limite_faltas:
         return "Recuperação"
     else:
         return "Reprovado"
@@ -57,7 +85,7 @@ def list_al(alunos):
         print('\nSem alunos registrados no sistema.\n')
     else:
         for aluno in alunos:
-            print(f'Nome: {aluno["nome"]}\nMatrícula: {aluno["matricula"]}\nData de nascimento: {aluno["data_nascimento"]}\nNotas: {aluno["notas"]}\nMédia: {aluno["media"]}\nFaltas: {aluno["faltas"]}\nMédia: {aluno["media"]}')
+            print(f'Nome: {aluno["nome"]}\nMatrícula: {aluno["matricula"]}\nData de nascimento: {aluno["data_nascimento"]}\nNotas: {aluno["notas"]}\nMédia: {aluno["media"]:.2f}\nFaltas: {aluno["faltas"]}\nStatus: {calcular_status(aluno["media"], aluno["faltas"])}\n')
 
 def find_al(alunos):
     while True:
@@ -68,7 +96,7 @@ def find_al(alunos):
             print('Valor não válido, tente novamente.')
     for aluno in alunos:
         if filtro == aluno['matricula']:
-            print(f'\nAluno(a) encontrado:\nNome: {aluno["nome"]}\nMatrícula: {aluno["matricula"]}\nData de nascimento: {aluno["data_nascimento"]}\nNotas: {aluno["notas"]}\nMédia: {aluno["media"]}\nFaltas: {aluno["faltas"]}\nMédia: {aluno["media"]}\n')
+            print(f'\nAluno(a) encontrado:\nNome: {aluno["nome"]}\nMatrícula: {aluno["matricula"]}\nData de nascimento: {aluno["data_nascimento"]}\nNotas: {aluno["notas"]}\nMédia: {aluno["media"]:.2f}\nFaltas: {aluno["faltas"]}\nStatus: {calcular_status(aluno["media"], aluno["faltas"])}\n')
             return aluno
     print('\nAluno não encontrado...')
     return None
@@ -91,7 +119,13 @@ def modificar(alunos):
     aluno = find_al(alunos)
     if aluno:
         print(f'O que gostaria de alterar:\n1 - Nome\n2 - Matrícula\n3 - Data de nascimento\n4 - Notas\n5 - Faltas\n6 - Cancelar')
-        opc = int(input('Digite o número da opção que deseja: '))
+        while True:
+            try:
+                opc = int(input('Digite o número da opção que deseja: '))
+                break
+            except ValueError:
+                print('Valor inválido, tente novamente.')
+
         if opc == 1:
             aluno['nome'] = input('Digite o novo nome: ')
         elif opc == 2:
@@ -175,17 +209,33 @@ def relatorio_grupo(alunos):
     print('Relatório de grupo gerado: relatorio_grupo.docx')
 
 def relatorio_excel(alunos):
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.append(["Nome", "Matrícula", "Data de Nascimento", "Notas", "Média", "Faltas", "Status"])
-    for aluno in alunos:
-        status = calcular_status(aluno["media"], aluno["faltas"])
-        ws.append([
-            aluno["nome"], aluno["matricula"], aluno["data_nascimento"], 
-            ', '.join(map(str, aluno["notas"])), aluno["media"], aluno["faltas"], status
-        ])
-    wb.save('relatorio_alunos.xlsx')
-    print('Exportação para Excel concluída: relatorio_alunos.xlsx')
+    try:
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.append(["Nome", "Matrícula", "Data de Nascimento", "Notas", "Média", "Faltas", "Status"])
+        
+        for aluno in alunos:
+            #VERIFICAR
+            media = float(aluno["media"]) if isinstance(aluno["media"], (int, float)) else 0.0
+            
+            status = calcular_status(media, aluno["faltas"])
+            
+            if aluno["notas"]:
+                notas_str = ', '.join(map(str, aluno["notas"]))
+            else:
+                notas_str = 'Nenhuma nota registrada'
+            
+            ws.append([
+                aluno["nome"], aluno["matricula"], aluno["data_nascimento"], 
+                notas_str, media, aluno["faltas"], status
+            ])
+        
+        wb.save('relatorio_alunos.xlsx')
+        print('Exportação para Excel concluída: relatorio_alunos.xlsx')
+    
+    except Exception as e:
+        print(f"Ocorreu um erro ao gerar o relatório: {e}")
+
 
 def menu():
     alunos = process_dados()
@@ -194,7 +244,13 @@ def menu():
         print(f'{"SISTEMA DE GESTÃO DE ALUNOS".center(50)}')
         print(f'{"=" * 50}')
         print('\n1 - Adicionar um novo aluno\n2 - Listar alunos já registrados\n3 - Buscar aluno\n4 - Editar dados de um aluno já cadastrado\n5 - Remover um aluno do sistema\n6 - Organizar lista de alunos\n7 - Relatório de um aluno em particular\n8 - Relatório de turma geral\n9 - Planilha de desempenho dos alunos\n0 - Sair do sistema')
-        decisao = int(input('- '))
+        while True:
+            try:
+                decisao = int(input('- '))
+                break
+            except ValueError:
+                print('Valor inválido, tente novamente.')
+
         if decisao == 1:
             add_alun(alunos)
         elif decisao == 2:
@@ -214,9 +270,9 @@ def menu():
         elif decisao == 9:
             relatorio_excel(alunos)
         elif decisao == 0:
-            print('Saindo do sistema...')
+            print('\nSaindo do sistema...\n')
             break
         else:
-            print('Opção inválida, tente novamente.')
+            print('\nOpção inválida, tente novamente.\n')
 
 menu()
