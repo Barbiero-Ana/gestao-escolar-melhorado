@@ -42,22 +42,19 @@ def add_alun(alunos):
 
     alunos.append({'nome': nome, 'matricula': matricula, 'data_nascimento': birth_format, 'notas': notas, 'media': media, 'faltas': faltas})
     save_dados(alunos)
-    print('\nAluno(a) adicionado ao sistema.')
+    print('\nAluno(a) adicionado ao sistema.\n')
 
-
-def calcular_status(alunos):
-    aluno = find_al(alunos)
-    if aluno:
-        if aluno["media"] >= 7 and aluno["faltas"] <= 5:
-            print("Aprovado")
-        elif aluno["media"] >= 5 and aluno["faltas"] <= 5:
-            print("Recuperação")
-        else:
-            print("Reprovado")
+def calcular_status(media, faltas):
+    if media >= 7 and faltas <= 5:
+        return "Aprovado"
+    elif media >= 5 and faltas <= 5:
+        return "Recuperação"
+    else:
+        return "Reprovado"
 
 def list_al(alunos):
     if not alunos:
-        print('Sem alunos registrados no sistema.')
+        print('\nSem alunos registrados no sistema.\n')
     else:
         for aluno in alunos:
             print(f'Nome: {aluno["nome"]}\nMatrícula: {aluno["matricula"]}\nData de nascimento: {aluno["data_nascimento"]}\nNotas: {aluno["notas"]}\nMédia: {aluno["media"]}\nFaltas: {aluno["faltas"]}\nMédia: {aluno["media"]}')
@@ -65,26 +62,30 @@ def list_al(alunos):
 def find_al(alunos):
     while True:
         try:
-            filtro = int(input('Digite o número de matrícula do aluno'))
+            filtro = int(input('Digite o número de matrícula do aluno: '))
             break
         except ValueError:
             print('Valor não válido, tente novamente.')
     for aluno in alunos:
         if filtro == aluno['matricula']:
-            print(f'Aluno(a) encontrado:\nNome: {aluno["nome"]}\nMatrícula: {aluno["matricula"]}\nData de nascimento: {aluno["data_nascimento"]}\nNotas: {aluno["notas"]}\nMédia: {aluno["media"]}\nFaltas: {aluno["faltas"]}\nMédia: {aluno["media"]}')
+            print(f'\nAluno(a) encontrado:\nNome: {aluno["nome"]}\nMatrícula: {aluno["matricula"]}\nData de nascimento: {aluno["data_nascimento"]}\nNotas: {aluno["notas"]}\nMédia: {aluno["media"]}\nFaltas: {aluno["faltas"]}\nMédia: {aluno["media"]}\n')
             return aluno
     print('\nAluno não encontrado...')
     return None
 
-
 def relatorio_individual(alunos):
     aluno = find_al(alunos)
     if aluno:
-        try:
-            with open('relatorio-de-aluno', 'r') as arquivo:
-                print()
-        except FileNotFoundError:
-            pass
+        doc = Document()
+        doc.add_heading(f'Relatório de {aluno["nome"]}', level=1)
+        doc.add_paragraph(f'Matrícula: {aluno["matricula"]}')
+        doc.add_paragraph(f'Data de Nascimento: {aluno["data_nascimento"]}')
+        doc.add_paragraph(f'Notas: {aluno["notas"]}')
+        doc.add_paragraph(f'Média: {aluno["media"]:.2f}')
+        doc.add_paragraph(f'Faltas: {aluno["faltas"]}')
+        doc.add_paragraph(f'Status: {calcular_status(aluno["media"], aluno["faltas"])}')
+        doc.save(f'relatorio_{aluno["matricula"]}.docx')
+        print(f'Relatório gerado: relatorio_{aluno["matricula"]}.docx\n')
 
 def modificar(alunos):
     aluno = find_al(alunos)
@@ -132,16 +133,16 @@ def modificar(alunos):
             print('Voltando ao menu inicial...')
             return
         else:
-            print('Opção inválida, tente novamente.')
+            print('\nOpção inválida, tente novamente.\n')
         save_dados(alunos)
-        print('Dados atualizados.')
+        print('\nDados atualizados.\n')
 
 def excluir(alunos):
     aluno = find_al(alunos)
     if aluno:
         alunos.remove(aluno)
         save_dados(alunos)
-        print('\nRemoção realizada.')
+        print('\nRemoção realizada.\n')
 
 def organizar(alunos):
     filtro = input('- Organizar por nome\n- Organizar por número de matrícula\n- Organizar por data de nascimento\nDigite: "nome" ou "matricula" ou "data de nascimento": ')
@@ -152,28 +153,11 @@ def organizar(alunos):
     elif filtro.lower() == 'data de nascimento':
         alunos.sort(key=lambda aluno: aluno['data_nascimento'])
     else:
-        print('Opção inválida')
+        print('\nOpção inválida\n')
         return
     
     save_dados(alunos)
     print(f'Alunos ordenados por {filtro}')
-
-
-def relatorio_individual(aluno):
-    filtro = find_al()
-    if filtro == True:
-        doc = Document()
-        doc.add_heading(f'Relatório de {aluno["nome"]}', level= 1)
-        doc.add_paragraph(f'Matrícula: {aluno["matricula"]}')
-        doc.add_paragraph(f'Data de Nascimento: {aluno["data_nascimento"]}')
-        doc.add_paragraph(f'Notas: {aluno["notas"]}')
-        doc.add_paragraph(f'Média: {aluno["media"]:.2f}')
-        doc.add_paragraph(f'Faltas: {aluno["faltas"]}')
-        doc.add_paragraph(f'Status: {calcular_status(aluno["media"], aluno["faltas"])}')
-        doc.save(f'relatorio_{aluno["matricula"]}.docx')
-        print(f'Relatório gerado: relatorio_{aluno["matricula"]}.docx')
-
-
 
 def relatorio_grupo(alunos):
     doc = Document()
@@ -182,16 +166,13 @@ def relatorio_grupo(alunos):
         doc.add_paragraph(f'Nome: {aluno["nome"]}')
         doc.add_paragraph(f'Matrícula: {aluno["matricula"]}')
         doc.add_paragraph(f'Data de Nascimento: {aluno["data_nascimento"]}')
-        doc.add_paragraph(f'Notas: {aluno["notas"][:-1]}')
+        doc.add_paragraph(f'Notas: {aluno["notas"]}')
         doc.add_paragraph(f'Média: {aluno["media"]:.2f}')
         doc.add_paragraph(f'Faltas: {aluno["faltas"]}')
         doc.add_paragraph(f'Status: {calcular_status(aluno["media"], aluno["faltas"])}')
         doc.add_paragraph('-' * 40)
     doc.save('relatorio_grupo.docx')
     print('Relatório de grupo gerado: relatorio_grupo.docx')
-
-
-
 
 def relatorio_excel(alunos):
     wb = openpyxl.Workbook()
@@ -205,8 +186,6 @@ def relatorio_excel(alunos):
         ])
     wb.save('relatorio_alunos.xlsx')
     print('Exportação para Excel concluída: relatorio_alunos.xlsx')
-
-
 
 def menu():
     alunos = process_dados()
